@@ -94,14 +94,14 @@ npm test            # PASS（20 個純函式測試案例）
 
 ## 部署方式
 
-本地驗證（lint / typecheck / build）已全數通過，尚未部署。部署步驟規劃如下，實際登入、授權與 push 由使用者親自執行：
+原始碼託管於 GitHub，並由使用者透過 Vercel 匯入該 repository 完成部署：
 
-1. 使用者於 GitHub 建立名為 `focus-quest-timer` 的 repository。
-2. 使用者在本機執行 `git remote add origin <repo-url>` 並 `git push`。
-3. 使用者登入 Vercel，匯入該 repository 並完成部署設定。
-4. 部署完成後，使用者以無痕視窗開啟公開網址，確認不需登入即可使用全部功能。
+- GitHub：https://github.com/zxcheng19970303/rpg-focus-quest-timer
+- Vercel 專案匯入、網域與部署設定由使用者親自於 Vercel 完成。
 
-公開網址：**尚未部署**
+部署後已用未登入狀態複查：網站可直接開啟、不需登入 GitHub 或 Vercel、主視覺 SVG 正常載入、頁面內容（Hero、番茄鐘、XP 看板、近 30 天圖表、特色與使用方式）皆正確顯示。
+
+公開網址：**https://rpg-focus-quest-timer.vercel.app/**
 
 ## 尚未實作的功能邊界
 
