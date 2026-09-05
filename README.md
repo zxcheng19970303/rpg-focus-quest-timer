@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Focus Quest｜專注遠征隊
 
-## Getting Started
+把每段專注變成你的經驗值。一個安靜、無後端的番茄鐘小工具：選一段專注時間、完成倒數、累積 XP、升級，並在回合結束時提醒你起身走動。
 
-First, run the development server:
+## 使用技術
+
+- Next.js 16（App Router）
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- React state（無狀態管理套件）
+- `localStorage`（純前端保存，無後端）
+- ESLint
+- npm
+- `node:test`（Node.js 內建測試框架，驗證 XP／等級／儲存等純函式）
+
+## 本地啟動
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+開啟終端機顯示的網址（預設 http://localhost:3000，若該埠已被占用會自動改用其他埠）。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 功能說明
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Hero 區塊**：品牌與標語，CTA「開始一段專注」會捲動到番茄鐘區塊（不會偷偷開始倒數）。
+- **番茄鐘**：可選擇 1、25、50、90 分鐘；支援開始、暫停、繼續、重設；倒數以時間戳計算，避免背景分頁造成的時間漂移；狀態文字與進度條皆有清楚的視覺與 `aria-live` 呈現。
+- **XP 與等級看板**：顯示目前等級、稱號、累積 XP、距下一級所需 XP（或已達最高稱號）與最近一次完成的 XP 回饋。
+- **完成回饋與活動提醒**：回合完成後顯示非阻擋式提示卡片，列出獲得的 XP（含不中斷獎勵，如適用）與 2–3 項起身活動建議；可選「再來一回合」或「稍後再說」。
+- **近 30 天專注紀錄圖表**：以長條圖呈現每日專注分鐘數、折線圖呈現每日獲得 XP（各自依區間縮放），並顯示區間內累積分鐘／回合／XP 的文字摘要。
+- **特色卡片與使用方式**：合併為同一區塊，三張功能特色卡片與三步驟使用說明共用一個標題群組，避免視覺上重複。
+- **響應式設計**：支援桌面（約 1280px）、平板（約 768px）、手機（約 390px），手機版不出現水平捲軸。
+- **無障礙**：全繁體中文按鈕文字、鍵盤可依序操作、清楚的 focus 樣式、disabled 狀態明確、不只靠顏色傳遞狀態、支援 `prefers-reduced-motion`。
 
-## Learn More
+## XP 與等級規則
 
-To learn more about Next.js, take a look at the following resources:
+純規則實作於 [`src/lib/focus-rules.ts`](src/lib/focus-rules.ts)，資料保存於 [`src/lib/storage.ts`](src/lib/storage.ts)。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**基本 XP**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| 專注時間 | 基本 XP |
+| -------- | ------- |
+| 1 分鐘   | 1       |
+| 25 分鐘  | 25      |
+| 50 分鐘  | 60      |
+| 90 分鐘  | 120     |
 
-## Deploy on Vercel
+**不中斷獎勵**：整段專注都沒有按過暫停，完成時額外 `+10 XP`；曾暫停過則不給獎勵，但仍給基本 XP。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+earnedXp = baseXp + (hasPaused ? 0 : 10)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**等級門檻**
+
+| 等級 | 累積 XP | 稱號         |
+| ---- | ------- | ------------ |
+| Lv.1 | 0       | 專注新手     |
+| Lv.2 | 100     | 節奏建立者   |
+| Lv.3 | 300     | 深度工作者   |
+| Lv.4 | 600     | 心流實踐者   |
+| Lv.5 | 1,000   | 專注大師     |
+
+超過 1,000 XP 仍維持 Lv.5，並顯示已達最高稱號。
+
+**每日專注紀錄**：每次完成回合會把當日的專注分鐘數、XP 與完成回合數累加進 `dailyHistory`（最多保留最近 30 天），供近 30 天圖表使用；資料一樣只存在 `localStorage`，不含任何個資。
+
+## 測試指令與測試結果
+
+```bash
+npm run lint        # PASS
+npm run typecheck   # PASS
+npm run build       # PASS
+npm test            # PASS（20 個純函式測試案例）
+```
+
+`npm test` 涵蓋規格書列出的核心邏輯案例，以及後續新增的每日紀錄邏輯：
+
+- 1 / 25 / 50 / 90 分鐘未暫停完成的 XP 計算（11 / 35 / 70 / 130）
+- 25 分鐘曾暫停完成的 XP 計算（25，不含獎勵）
+- XP 99、299 時完成 1 分鐘未暫停回合後的升級判定（Lv.2、Lv.3）
+- 0 XP 與超過 1,000 XP 的等級／稱號邊界情況
+- `localStorage` 無資料、正常讀寫、JSON 損毀、格式不正確時的安全回退
+- 同一天多次完成回合會累加、不同天各自成一筆紀錄並依日期排序、只保留最近 30 天
+- 近 30 天序列會把沒有紀錄的日期補 0，且每日紀錄格式錯誤時只清空該欄位、不影響 XP／完成次數
+
+「完成同一回合不可重複發放 XP」與「重設未完成回合不增加 XP」屬於計時器狀態機的行為（透過 session id 防重複發放、reset 不呼叫發放回呼），已在程式邏輯與人工瀏覽器操作中驗證，未另外導入元件測試框架（避免新增非必要相依套件）。
+
+## 圖片素材來源與授權
+
+`public/images/focus-quest-hero.svg` 為本專案自行繪製的原創 inline SVG 插圖（番茄鐘、經驗值進度環、專注火焰與遠征徽章），未使用任何外部素材或網路圖片，無額外授權需求。
+
+## 部署方式
+
+本地驗證（lint / typecheck / build）已全數通過，尚未部署。部署步驟規劃如下，實際登入、授權與 push 由使用者親自執行：
+
+1. 使用者於 GitHub 建立名為 `focus-quest-timer` 的 repository。
+2. 使用者在本機執行 `git remote add origin <repo-url>` 並 `git push`。
+3. 使用者登入 Vercel，匯入該 repository 並完成部署設定。
+4. 部署完成後，使用者以無痕視窗開啟公開網址，確認不需登入即可使用全部功能。
+
+公開網址：**尚未部署**
+
+## 尚未實作的功能邊界
+
+依規格書第一版範圍，以下功能刻意不實作：
+
+- 使用者登入 / 雲端同步 / 後端 API
+- 待辦事項管理
+- 全球或多人排行榜、多人競賽
+- 瀏覽器推播通知
+- 音效設定
+- 社交分享
+- 付款或訂閱
+- 真實健康資料紀錄
