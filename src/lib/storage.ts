@@ -1,14 +1,8 @@
-import {
-  FOCUS_HISTORY_DAYS,
-  isFocusMinutes,
-  type DailyFocusEntry,
-  type FocusMinutes,
-} from "./focus-rules.ts";
+import { FOCUS_HISTORY_DAYS, type DailyFocusEntry } from "./focus-rules.ts";
 
 export type PersistedFocusState = {
   totalXp: number;
   completedSessions: number;
-  lastSelectedMinutes?: FocusMinutes;
   dailyHistory: DailyFocusEntry[];
 };
 
@@ -37,19 +31,7 @@ function isValidCoreState(value: unknown): value is Record<string, unknown> {
     Number.isFinite(candidate.completedSessions) &&
     candidate.completedSessions >= 0;
 
-  if (!hasValidTotalXp || !hasValidCompletedSessions) {
-    return false;
-  }
-
-  if (
-    candidate.lastSelectedMinutes !== undefined &&
-    (typeof candidate.lastSelectedMinutes !== "number" ||
-      !isFocusMinutes(candidate.lastSelectedMinutes))
-  ) {
-    return false;
-  }
-
-  return true;
+  return hasValidTotalXp && hasValidCompletedSessions;
 }
 
 function isValidDailyEntry(value: unknown): value is DailyFocusEntry {
@@ -101,9 +83,6 @@ export function loadPersistedState(): PersistedFocusState {
       totalXp: parsed.totalXp as number,
       completedSessions: parsed.completedSessions as number,
       dailyHistory: sanitizeDailyHistory(parsed.dailyHistory),
-      ...(parsed.lastSelectedMinutes !== undefined
-        ? { lastSelectedMinutes: parsed.lastSelectedMinutes as FocusMinutes }
-        : {}),
     };
   } catch {
     return DEFAULT_PERSISTED_STATE;

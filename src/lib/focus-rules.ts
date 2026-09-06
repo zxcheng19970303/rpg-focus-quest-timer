@@ -1,22 +1,28 @@
-export const FOCUS_MINUTE_OPTIONS = [1, 25, 50, 90] as const;
+export const FOCUS_MINUTE_OPTIONS = [1, 5, 15, 25, 60, 90] as const;
 
-export type FocusMinutes = (typeof FOCUS_MINUTE_OPTIONS)[number];
+export const MIN_CUSTOM_FOCUS_MINUTES = 1;
+export const MAX_CUSTOM_FOCUS_MINUTES = 180;
 
-export function isFocusMinutes(value: number): value is FocusMinutes {
-  return (FOCUS_MINUTE_OPTIONS as readonly number[]).includes(value);
+export type FocusMinutes = number;
+
+export function isValidFocusMinutes(value: number): value is FocusMinutes {
+  return (
+    Number.isInteger(value) &&
+    value >= MIN_CUSTOM_FOCUS_MINUTES &&
+    value <= MAX_CUSTOM_FOCUS_MINUTES
+  );
 }
 
-const BASE_XP_BY_MINUTES: Record<FocusMinutes, number> = {
-  1: 1,
-  25: 25,
-  50: 60,
-  90: 120,
-};
+export function clampFocusMinutes(value: number): FocusMinutes {
+  const rounded = Math.round(value);
+  return Math.min(MAX_CUSTOM_FOCUS_MINUTES, Math.max(MIN_CUSTOM_FOCUS_MINUTES, rounded));
+}
 
 const UNINTERRUPTED_BONUS_XP = 10;
 
 export function calculateEarnedXp(minutes: FocusMinutes, hasPaused: boolean): number {
-  const baseXp = BASE_XP_BY_MINUTES[minutes];
+  // 基本 XP 與專注分鐘數成正比（1 分鐘 = 1 XP），才能同時支援自訂時間。
+  const baseXp = minutes;
   return baseXp + (hasPaused ? 0 : UNINTERRUPTED_BONUS_XP);
 }
 

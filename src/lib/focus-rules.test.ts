@@ -4,12 +4,22 @@ import {
   addDailyFocusRecord,
   buildLast30DaysSeries,
   calculateEarnedXp,
+  clampFocusMinutes,
   getLevelInfo,
   getLocalDateKey,
+  isValidFocusMinutes,
 } from "./focus-rules.ts";
 
 test("1 分鐘未暫停完成，得到 11 XP", () => {
   assert.equal(calculateEarnedXp(1, false), 11);
+});
+
+test("5 分鐘未暫停完成，得到 15 XP", () => {
+  assert.equal(calculateEarnedXp(5, false), 15);
+});
+
+test("15 分鐘未暫停完成，得到 25 XP", () => {
+  assert.equal(calculateEarnedXp(15, false), 25);
 });
 
 test("25 分鐘未暫停完成，得到 35 XP", () => {
@@ -20,12 +30,33 @@ test("25 分鐘曾暫停後完成，得到 25 XP", () => {
   assert.equal(calculateEarnedXp(25, true), 25);
 });
 
-test("50 分鐘未暫停完成，得到 70 XP", () => {
-  assert.equal(calculateEarnedXp(50, false), 70);
+test("60 分鐘未暫停完成，得到 70 XP", () => {
+  assert.equal(calculateEarnedXp(60, false), 70);
 });
 
-test("90 分鐘未暫停完成，得到 130 XP", () => {
-  assert.equal(calculateEarnedXp(90, false), 130);
+test("90 分鐘未暫停完成，得到 100 XP", () => {
+  assert.equal(calculateEarnedXp(90, false), 100);
+});
+
+test("自訂 45 分鐘未暫停完成，得到 55 XP（基本 XP 與分鐘數成正比）", () => {
+  assert.equal(calculateEarnedXp(45, false), 55);
+});
+
+test("isValidFocusMinutes 只接受 1～180 之間的整數", () => {
+  assert.equal(isValidFocusMinutes(1), true);
+  assert.equal(isValidFocusMinutes(180), true);
+  assert.equal(isValidFocusMinutes(45), true);
+  assert.equal(isValidFocusMinutes(0), false);
+  assert.equal(isValidFocusMinutes(181), false);
+  assert.equal(isValidFocusMinutes(12.5), false);
+  assert.equal(isValidFocusMinutes(-5), false);
+});
+
+test("clampFocusMinutes 會四捨五入並限制在合法範圍內", () => {
+  assert.equal(clampFocusMinutes(0), 1);
+  assert.equal(clampFocusMinutes(-10), 1);
+  assert.equal(clampFocusMinutes(300), 180);
+  assert.equal(clampFocusMinutes(12.6), 13);
 });
 
 test("XP 99 完成 1 分鐘未暫停回合後，等級變成 Lv.2", () => {

@@ -9,7 +9,7 @@ type Feature = {
 const FEATURES: Feature[] = [
   {
     title: "自訂專注節奏",
-    description: "依照工作或學習情境，從 1、25、50 到 90 分鐘中選擇最適合的專注時間。",
+    description: "依照工作或學習情境，從 1、5、15、25、60、90 分鐘或自訂時間中選擇。",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
         <circle cx="12" cy="13" r="8" stroke="currentColor" strokeWidth="1.6" />
@@ -49,12 +49,6 @@ const FEATURES: Feature[] = [
   },
 ];
 
-const STEPS = [
-  { title: "選擇專注時間", description: "從 1、25、50 或 90 分鐘中挑一個適合現在的節奏。" },
-  { title: "專心完成倒數", description: "開始後可以暫停再繼續，完整倒數結束就算完成一回合。" },
-  { title: "領取 XP 並起身活動", description: "查看獲得的經驗值與等級進度，並依提醒起身動一動。" },
-];
-
 export default function FeatureSection() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-10">
@@ -73,22 +67,6 @@ export default function FeatureSection() {
           </div>
         ))}
       </div>
-
-      <h2 className="mt-14 text-2xl font-bold text-foreground sm:text-3xl">使用方式</h2>
-      <ol className="mt-8 grid gap-6 sm:grid-cols-3">
-        {STEPS.map((step, index) => (
-          <li
-            key={step.title}
-            className="rounded-2xl border border-border-subtle bg-surface p-6"
-          >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gold text-sm font-bold text-background">
-              {index + 1}
-            </span>
-            <h3 className="mt-4 text-lg font-semibold text-foreground">{step.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">{step.description}</p>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }

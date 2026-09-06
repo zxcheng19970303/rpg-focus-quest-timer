@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FOCUS_MINUTE_OPTIONS, type FocusMinutes } from "@/lib/focus-rules";
+import {
+  FOCUS_MINUTE_OPTIONS,
+  MAX_CUSTOM_FOCUS_MINUTES,
+  MIN_CUSTOM_FOCUS_MINUTES,
+  clampFocusMinutes,
+  type FocusMinutes,
+} from "@/lib/focus-rules";
 
 type TimerStatus = "idle" | "running" | "paused" | "completed";
 
@@ -11,6 +17,7 @@ type FocusTimerProps = {
 };
 
 const DEFAULT_MINUTES: FocusMinutes = 1;
+const DEFAULT_CUSTOM_MINUTES = 45;
 
 function minutesToMs(minutes: FocusMinutes): number {
   return minutes * 60 * 1000;
@@ -32,6 +39,8 @@ const STATUS_LABEL: Record<TimerStatus, string> = {
 
 export default function FocusTimer({ resetToken, onSessionComplete }: FocusTimerProps) {
   const [selectedMinutes, setSelectedMinutes] = useState<FocusMinutes>(DEFAULT_MINUTES);
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customMinutesText, setCustomMinutesText] = useState(String(DEFAULT_CUSTOM_MINUTES));
   const [status, setStatus] = useState<TimerStatus>("idle");
   const [remainingMs, setRemainingMs] = useState<number>(minutesToMs(DEFAULT_MINUTES));
 
@@ -79,6 +88,12 @@ export default function FocusTimer({ resetToken, onSessionComplete }: FocusTimer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetToken]);
 
+  function applySelectedMinutes(minutes: FocusMinutes) {
+    setSelectedMinutes(minutes);
+    setRemainingMs(minutesToMs(minutes));
+    pausedRemainingMsRef.current = minutesToMs(minutes);
+  }
+
   function startFocus() {
     if (status !== "idle") return;
     sessionIdRef.current += 1;
@@ -114,15 +129,45 @@ export default function FocusTimer({ resetToken, onSessionComplete }: FocusTimer
     setStatus("idle");
   }
 
-  function selectMinutes(minutes: FocusMinutes) {
+  function selectPresetMinutes(minutes: FocusMinutes) {
     if (status !== "idle") return;
-    setSelectedMinutes(minutes);
-    setRemainingMs(minutesToMs(minutes));
-    pausedRemainingMsRef.current = minutesToMs(minutes);
+    setIsCustomMode(false);
+    applySelectedMinutes(minutes);
+  }
+
+  function activateCustomMode() {
+    if (status !== "idle") return;
+    setIsCustomMode(true);
+    const parsed = Number.parseInt(customMinutesText, 10);
+    const clamped = Number.isFinite(parsed) ? clampFocusMinutes(parsed) : DEFAULT_CUSTOM_MINUTES;
+    setCustomMinutesText(String(clamped));
+    applySelectedMinutes(clamped);
+  }
+
+  function handleCustomMinutesInput(rawValue: string) {
+    if (status !== "idle") return;
+    setCustomMinutesText(rawValue);
+    const parsed = Number.parseInt(rawValue, 10);
+    if (
+      Number.isFinite(parsed) &&
+      parsed >= MIN_CUSTOM_FOCUS_MINUTES &&
+      parsed <= MAX_CUSTOM_FOCUS_MINUTES
+    ) {
+      applySelectedMinutes(parsed);
+    }
+  }
+
+  function handleCustomMinutesBlur() {
+    if (status !== "idle") return;
+    const parsed = Number.parseInt(customMinutesText, 10);
+    const clamped = Number.isFinite(parsed) ? clampFocusMinutes(parsed) : selectedMinutes;
+    setCustomMinutesText(String(clamped));
+    applySelectedMinutes(clamped);
   }
 
   const totalMs = minutesToMs(selectedMinutes);
   const progressRatio = totalMs === 0 ? 0 : Math.min(1, 1 - remainingMs / totalMs);
+  const isEditable = status === "idle";
 
   return (
     <div className="rounded-3xl border border-border-subtle bg-surface p-6 shadow-xl sm:p-8">
@@ -135,15 +180,15 @@ export default function FocusTimer({ resetToken, onSessionComplete }: FocusTimer
 
       <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="選擇專注時間">
         {FOCUS_MINUTE_OPTIONS.map((minutes) => {
-          const isSelected = minutes === selectedMinutes;
-          const isDisabled = status !== "idle";
+          const isSelected = !isCustomMode && minutes === selectedMinutes;
+          const isDisabled = !isEditable;
           return (
             <button
               key={minutes}
               type="button"
               aria-pressed={isSelected}
               disabled={isDisabled}
-              onClick={() => selectMinutes(minutes)}
+              onClick={() => selectPresetMinutes(minutes)}
               className={`min-w-[4.5rem] rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
                 isSelected
                   ? "border-gold bg-gold text-background"
@@ -156,7 +201,47 @@ export default function FocusTimer({ resetToken, onSessionComplete }: FocusTimer
             </button>
           );
         })}
+
+        <button
+          type="button"
+          aria-pressed={isCustomMode}
+          disabled={!isEditable}
+          onClick={activateCustomMode}
+          className={`min-w-[4.5rem] rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${
+            isCustomMode
+              ? "border-gold bg-gold text-background"
+              : "border-border-subtle bg-transparent text-muted hover:border-gold/60 hover:text-foreground"
+          } ${!isEditable && !isCustomMode ? "cursor-not-allowed opacity-40" : ""} ${
+            !isEditable && isCustomMode ? "cursor-not-allowed opacity-80" : ""
+          }`}
+        >
+          自訂
+        </button>
       </div>
+
+      {isCustomMode ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label htmlFor="custom-focus-minutes" className="text-sm text-muted">
+            自訂分鐘數
+          </label>
+          <input
+            id="custom-focus-minutes"
+            type="number"
+            inputMode="numeric"
+            min={MIN_CUSTOM_FOCUS_MINUTES}
+            max={MAX_CUSTOM_FOCUS_MINUTES}
+            step={1}
+            value={customMinutesText}
+            disabled={!isEditable}
+            onChange={(event) => handleCustomMinutesInput(event.target.value)}
+            onBlur={handleCustomMinutesBlur}
+            className="w-20 rounded-lg border border-border-subtle bg-background px-3 py-1.5 text-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <span className="text-sm text-muted">
+            分鐘（{MIN_CUSTOM_FOCUS_MINUTES}–{MAX_CUSTOM_FOCUS_MINUTES}）
+          </span>
+        </div>
+      ) : null}
 
       <div className="mt-8 flex flex-col items-center gap-4">
         <p
