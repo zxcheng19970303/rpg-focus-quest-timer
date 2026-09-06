@@ -99,13 +99,13 @@ npm test            # PASS（25 個純函式測試案例）
 - GitHub：https://github.com/zxcheng19970303/rpg-focus-quest-timer
 - Vercel 專案匯入、網域與部署設定由使用者親自於 Vercel 完成。
 
-部署後已用未登入狀態複查：網站可直接開啟、不需登入 GitHub 或 Vercel、主視覺 SVG 正常載入、頁面內容（Hero、番茄鐘、XP 看板、近 30 天圖表、特色與使用方式）皆正確顯示。
+部署後已用未登入狀態複查：網站可直接開啟、不需登入 GitHub 或 Vercel、主視覺 SVG 正常載入、頁面內容（Hero、番茄鐘、XP 看板、近 30 天圖表與特色卡片）皆正確顯示。
 
 公開網址：**https://rpg-focus-quest-timer.vercel.app/**
 
 ## 尚未實作的功能邊界
 
-依規格書第一版範圍，以下功能刻意不實作：
+依目前規格範圍，以下功能刻意不實作：
 
 - 使用者登入 / 雲端同步 / 後端 API
 - 待辦事項管理
